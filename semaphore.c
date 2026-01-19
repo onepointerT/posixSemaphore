@@ -35,10 +35,10 @@ static int lc_set_errno(int result) {
 	if (result != 0) {
 		errno = result;
 		return -1;
-		}
+	}
 
 	return 0;
-	}
+}
 
 /**
     Create an unnamed semaphore.
