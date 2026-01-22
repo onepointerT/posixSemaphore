@@ -97,6 +97,11 @@ typedef enum P_SIGNALS
    , SIGPWR            //   |    terminate	|
    , SIGRTMIN          //   |    terminate  |
    , SIGRTMAX          //   |    terminate  |
+   , NOSIGNAL
+   , SIGSYNC
+   , SIGASYNC
+   , SIGPARENT
+   , SIGRESUMED
 }
 PSignals;
 
@@ -139,7 +144,7 @@ struct Signal* signal_new( const PSignals psig, const bool locked
     , struct ParamPack* param_pack, struct PID_Array* receivers
     , const size_t results_size, const char* msg );
 bool signal_add_receiver( struct Signal* sig, const unsigned long pid_recv );
-
+unsigned int signal_say_children( enum PSignals psig, struct PThread* parent_thread );
 
 typedef struct SignalQueue {
     struct Signal* sig;

@@ -10,6 +10,7 @@ extern "C" {
 #endif
 
 #include "psignals.h"
+#include "ptime.h"
 #include "semaphore_type.h"
 #include "threadmem.h"
 
@@ -101,11 +102,6 @@ typedef enum PTHREAD_SIGNAL
 PThreadSignal;
 
 
-typedef struct SigAction {
-
-} sig_action_t;
-
-
 #define PTHREAD_MAX_CHILDREN 152
 #define PTHREAD_MAX_SEMAPHORE 102
 #define PTHREAD_MAX_DATA_ARRAY 56
@@ -153,9 +149,14 @@ typedef struct PThread {
     size_t cpucount;
 
     PThreadState stat;
+    struct ProcessTime* time_pstarted;
 
     enum PTHREAD_PROCESS_AVAILABILITY pshared;
     enum PTHREAD_CANCEL_STATE pcancelstate;
+
+    tick_t childhood_start;
+    tick_t childhood_ticks_per_second;
+    tick_t childhood_elapsed_ticks_since;
 
     bool (*detach)( struct PThread* pt );
     bool (*equal)( const struct PThread* pt1, const struct PThread* pt2 );
@@ -189,8 +190,9 @@ pthread_t* pthread_new( const enum PTHREAD_PROCESS_AVAILABILITY pshared
                     , void (* func)(void*), void* args
 );
 
+struct timespec* thread_time( const struct PThread* thread );
 
-bool thread_exit( struct PThread* thread, const SIGNAL sig );
+bool thread_exit( struct PThread* thread, const enum PSignals sig );
 
 #ifdef __cplusplus
 }

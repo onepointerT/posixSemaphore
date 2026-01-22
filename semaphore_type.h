@@ -49,8 +49,6 @@ typedef struct semaphore {
     bool (*data_unlock)( struct semaphore* sm, const PID process_id );
 } semaphore_t;
 
-struct timespec* timespec_new( const time_t seconds, const long nanoseconds );
-
 
 bool semaphore_timedwait( struct semaphore* sm, const struct timespec* abs_timeout );
 bool semaphore_trywait( struct semaphore* sm );

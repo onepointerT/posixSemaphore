@@ -7,15 +7,6 @@
 #include <stdio.h>
 #include <string.h>
 
-struct timespec* timespec_new( const time_t seconds, const long nanoseconds ) {
-    struct timespec* tsp = (struct timespec*) malloc(sizeof(struct timespec));
-
-    tsp->tv_sec = seconds;
-    tsp->tv_nsec = nanoseconds;
-
-    return tsp;
-}
-
 
 bool semaphore_timedwait( struct semaphore* sm, const struct timespec* abs_timeout ) {
     if ( sm == NULL || abs_timeout != NULL ) return false;

@@ -10,6 +10,7 @@ extern "C" {
 
 
 #include "mutex.h"
+#include "psync.h"
 #include "scheduler.h"
 #include "thread.h"
 #include "threadmem.h"
@@ -42,6 +43,10 @@ typedef struct scheduler {
     pthread_rwlock_t thread_access;
 
     threading_node_t* current;
+    signal_queue_t* sigqueue;
+
+    sync_process_handler_t sync_processes;
+
 } scheduler_t;
 
 struct scheduler* scheduler_new()
