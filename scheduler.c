@@ -14,7 +14,7 @@ struct scheduler* scheduler_new() {
     sched->mtx = (mutex_t**) malloc(sizeof(mutex_t*)*SCHEDULE_NUMBER_MUTEXES);
     sched->mtx_names = (char**) malloc(sizeof(char*)*SCHEDULE_NUMBER_MUTEXES);
 
-    sched->mem_shared = memory_new();
+    sched->mem_shared = memory_new( PRIVATE );
 
     return sched;
 }

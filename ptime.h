@@ -1,7 +1,7 @@
 // Copyright (C) 2026 The OnePointer Authors.
 //
 
-#ifnef _PTIME_H_
+#ifndef _PTIME_H_
 #define _PTIME_H_
 
 
@@ -13,6 +13,12 @@ extern "C" {
 #include "systime.h"
 
 #include <stdbool.h>
+
+
+#define HOURS_DAY 24
+#define SECONDS_DAY 86400
+#define SECONDS_HOUR 3600
+#define SECONDS_MINUTE 60
 
 
 typedef struct ProcessTime {
@@ -39,13 +45,16 @@ struct ProcessTime* systime_started();
 struct ProcessTime* systime_now();
 struct ProcessTime* systime_since_start();
 
-constexpr void time_init();
-constexpr inline struct ProcessTime* time_system_start;
-constexpr inline struct ProcessTime* time_since_start;
-constexpr void time_update_since_start();
+void time_init();
+struct ProcessTime* time_system_start;
+struct ProcessTime* time_since_start;
+void time_update_since_start();
 
 tick_t seconds_to_ticks( const deltatime_t dt );
 struct timespec* elapsed_since( struct ProcessTime* pt );
+
+deltatime_t dt_mod_int( const deltatime_t dt, const int number );
+deltatime_t dt_mod( const deltatime_t dt1, const deltatime_t dt2 );
 
 struct ProcessTime* tsToPTime( const struct timespec* tspec );
 deltatime_t tsToDeltaTime( const struct timespec* tspec );
@@ -67,9 +76,7 @@ struct timespec* ts_minus( const struct timespec* ts1, const struct timespec* ts
 struct timespec* ts_plus( const struct timespec* ts1, const struct timespec* ts2 );
 struct timespec* ts_times( const struct timespec* ts1, const struct timespec* ts2 );
 struct timespec* ts_divide( const struct timespec* ts1, const struct timespec* ts2 );
-struct timespec* ts_modulo( const struct timespec* ts1, const struct timespec* ts2 );
-
-// deltatime_t 
+struct timespec* ts_modulo( const struct timespec* ts1, const struct timespec* ts2 ); 
 
 const unsigned int sizeofnum( const long num );
 const unsigned int sizeofnumd_behind_comma( const double num );

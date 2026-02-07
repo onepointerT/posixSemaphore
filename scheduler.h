@@ -12,9 +12,10 @@ extern "C" {
 #include "mutex.h"
 #include "psync.h"
 #include "scheduler.h"
-#include "thread.h"
+#include "threading.h"
 #include "threadmem.h"
 #include "threadingpool.h"
+#include "truth.h"
 
 
 #define SCHEDULE_MAX_SIZE 56
@@ -47,9 +48,10 @@ typedef struct scheduler {
 
     sync_process_handler_t sync_processes;
 
+    struct TruthEquivation* conditions_next;
 } scheduler_t;
 
-struct scheduler* scheduler_new()
+struct scheduler* scheduler_new();
 
 
 #ifdef __cplusplus

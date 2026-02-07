@@ -9,6 +9,7 @@
 extern "C" {
 #endif
 
+#include "functionqueue.h"
 #include "psignals.h"
 #include "ptime.h"
 #include "semaphore_type.h"
@@ -20,7 +21,7 @@ extern "C" {
 #include <stdint.h>
 
 
-typedef enum PTHREAD_STATE
+typedef enum
 {
   /*
    * This enumeration represents the state of the thread;
@@ -44,7 +45,7 @@ typedef enum PTHREAD_STATE
 PThreadState;
 
 
-typedef enum PTHREAD_SCHED
+typedef enum
 {
   PThreadInheritSched = 0,
   PThreadExplicitSched = 1
@@ -52,18 +53,18 @@ typedef enum PTHREAD_SCHED
 PThreadSched;
 
 
-typedef enum PTHREAD_CANCEL_TYPE
+typedef enum
 {
-  PTHREAD_CANCEL_ASYNCHRONOUS = 0,
-  PTHREAD_CANCEL_DEFERRED = 1
+  PThreadCancelAsyncronous = 0,
+  PThreadCancelSyncronous = 1
 }
 PThreadCancelType;
 
 
 typedef enum PTHREAD_CANCEL_STATE
 {
-  PTHREAD_CANCEL_ENABLE = 0,
-  PTHREAD_CANCEL_DISABLE = 1
+  PThreadCancelEnable = 0,
+  PThreadCancelDisable = 1
 }
 PThreadCancelState;
 
@@ -71,33 +72,34 @@ PThreadCancelState;
 /*
  * Mutex types.
  */
-enum PTHREAD_MUTEX
+typedef enum
 {
   /* Compatibility with LinuxThreads */
-  PTHREAD_MUTEX_FAST_NP,
-  PTHREAD_MUTEX_RECURSIVE_NP,
-  PTHREAD_MUTEX_ERRORCHECK_NP,
-  PTHREAD_MUTEX_TIMED_NP = PTHREAD_MUTEX_FAST_NP,
-  PTHREAD_MUTEX_ADAPTIVE_NP = PTHREAD_MUTEX_FAST_NP,
+  MUTEX_FAST_NP,
+  MUTEX_RECURSIVE_NP,
+  MUTEX_ERRORCHECK_NP,
+  MUTEX_TIMED_NP = MUTEX_FAST_NP,
+  MUTEX_ADAPTIVE_NP = MUTEX_FAST_NP,
   /* For compatibility with POSIX */
-  PTHREAD_MUTEX_NORMAL = PTHREAD_MUTEX_FAST_NP,
-  PTHREAD_MUTEX_RECURSIVE = PTHREAD_MUTEX_RECURSIVE_NP,
-  PTHREAD_MUTEX_ERRORCHECK = PTHREAD_MUTEX_ERRORCHECK_NP,
-  PTHREAD_MUTEX_DEFAULT = PTHREAD_MUTEX_NORMAL
+  MUTEX_NORMAL = MUTEX_FAST_NP,
+  MUTEX_RECURSIVE = MUTEX_RECURSIVE_NP,
+  MUTEX_ERRORCHECK = MUTEX_ERRORCHECK_NP,
+  MUTEX_DEFAULT = MUTEX_NORMAL
 } PThreadMutex;
 
 
 /**
  * Common signal macros include:
  */
-typedef enum PTHREAD_SIGNAL
+typedef enum
 {
-  SIGINT = 0, //: Interrupt signal (e.g., Ctrl+C).
-  SIGTERM = 1, //: Termination request.
-  SIGSEGV = 2, //: Invalid memory access (segmentation fault).
-  SIGABRT = 3, //: Abnormal program termination.
-  SIGSUSP = 4, //: Suspend the process
-  SIGILL = 5 //: Illegal operation
+  sigint = 0, //: Interrupt signal (e.g., Ctrl+C).
+  sigterm = 1, //: Termination request.
+  sigsegv = 2, //: Invalid memory access (segmentation fault).
+  sigabrt = 3, //: Abnormal program termination.
+  sigsusp = 4, //: Suspend the process
+  sigill = 5, //: Illegal operation
+  sigresume = 6 //: Resume the process
 }
 PThreadSignal;
 
@@ -108,13 +110,18 @@ PThreadSignal;
 #define PTHREAD_MAX_BARRIER_ARRAY 22
 
 
+typedef void* (*process_f)(void*);
+
+
 typedef struct PThread {
     unsigned long threadid;
     char* name;
 
     void* handle;
-    void* (__PTW32_CDECL *func)(void);
+    process_f func;
     void* arg;
+
+    struct FunctionQueue* fqueue;
 
     pthread_t* proc;
     pthread_barrier_t* barrier;
@@ -131,11 +138,11 @@ typedef struct PThread {
 
     struct PThread* parent;
 
-    pthread_attr_t attr;
-    pthread_barrierattr_t attr_barrier;
-    pthread_mutexattr_t attr_mutex;
+    pthread_attr_t* attr;
+    pthread_barrierattr_t* attr_barrier;
+    pthread_mutexattr_t* attr_mutex;
 
-    pthread_mutex_t mutex;
+    pthread_mutex_t* mutex;
     
     pthread_key_t* key;
     void** data;
@@ -180,14 +187,15 @@ struct PThread* thread_new( const enum PTHREAD_PROCESS_AVAILABILITY pshared
                     , struct PThread* prev, struct PThread* next
                     , struct PThread* parent, const enum PTHREAD_CANCEL_STATE pcstate
                     , const char* threadname, const enum PTHREAD_SCHED sched_type
+                    , const int sched_priority, const size_t stacksize
                     , const enum PThreadMutex mutexkind
-                    , void (* func)(void*), void* args );
+                    , process_f func, void* args );
 
 pthread_t* pthread_new( const enum PTHREAD_PROCESS_AVAILABILITY pshared
                     , const size_t stacksize, const char* threadname
                     , const int sched_priority, const enum PThreadSched sched_type
                     , struct PThread* thread
-                    , void (* func)(void*), void* args
+                    , process_f func, void* args
 );
 
 struct timespec* thread_time( const struct PThread* thread );

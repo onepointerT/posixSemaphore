@@ -41,9 +41,9 @@
 #include <stdio.h>
 #include <winsock.h>
 
-#ifndef PTHREAD_PROCESS_SHARED
-#define PTHREAD_PROCESS_PRIVATE	0
-#define PTHREAD_PROCESS_SHARED	1
+#ifndef THREAD_PROCESS_SHARED
+#define THREAD_PROCESS_PRIVATE	0
+#define THREAD_PROCESS_SHARED	1
 #endif
 
 /* Support POSIX.1b semaphores.  */
@@ -85,6 +85,7 @@ typedef struct {
 	} arch_sem_t;
 
 #ifndef _TIMESPEC_DEFINED
+#define _CRT_NO_TIME_T 1
 struct timespec {
 	time_t  tv_sec;       /* Seconds */
 	long    tv_nsec;      /* Nanoseconds */

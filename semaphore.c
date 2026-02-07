@@ -64,7 +64,7 @@ int sem_init(sem_t *sem, int pshared, unsigned int value) {
 		return lc_set_errno(ENOMEM);
 		}
 
-	if (pshared != PTHREAD_PROCESS_PRIVATE) {
+	if (pshared != THREAD_PROCESS_PRIVATE) {
 		sprintf(buf, "Global\\%p", pv);
 		}
 

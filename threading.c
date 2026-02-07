@@ -13,12 +13,13 @@ struct PThread* thread_new( const enum PTHREAD_PROCESS_AVAILABILITY pshared
                     , const char* threadname, const enum PTHREAD_SCHED sched_type
                     , const int sched_priority, const size_t stacksize
                     , const enum PTHREAD_MUTEX mutexkind
-                    , void (* func)(void*), void* args
+                    , process_f func, void* args
 ) {
     struct PThread* pth = (struct PThread*) malloc(sizeof(struct PThread));
 
     pth->pshared = pshared;
-    pth->name = threadname;
+    pth->name = (char*) malloc(sizeof(char)*strlen(threadname));
+    strcpy( pth->name, threadname );
     pth->proc = pthread_new( pshared, stacksize, threadname
                         , sched_priority, sched_type, pth, func, args );
     pth->handle = pthread_getw32threadhandle_np( *pth->proc );
@@ -74,10 +75,10 @@ pthread_t* pthread_new( const enum PTHREAD_PROCESS_AVAILABILITY pshared
                     , const size_t stacksize, const char* threadname
                     , const int sched_priority, const enum PThreadSched sched_type
                     , struct PThread* thread
-                    , void (* func)(void*), void* args
+                    , process_f func, void* args
 ) {
 
-    pthread_attr_t pta = NULL;
+    pthread_attr_t* pta = NULL;
     pthread_attr_init( pta );
     pthread_attr_setname_np( pta, threadname );
     pthread_attr_setstacksize( pta, stacksize );

@@ -6,6 +6,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+//#define _M_CEE_PURE 1
+//#define _KERNEL 1
+#define __x86_64__ 1
+#include "math.h"
+
 
 struct timespec* timespec_new( const time_t seconds, const long nanoseconds ) {
     struct timespec* tsp = (struct timespec*) malloc(sizeof(struct timespec));
@@ -89,30 +94,39 @@ struct timespec* elapsed_since( struct ProcessTime* pt ) {
     return pt->elapsed;
 }
 
+deltatime_t dt_mod_int( const deltatime_t dt, const int number ) {
+    return (deltatime_t) fmod( (double) dt, (double) number );
+}
+
+
+deltatime_t dt_mod( const deltatime_t dt1, const deltatime_t dt2 ) {
+    return (deltatime_t) fmod( (double) dt1, (double) dt2 );
+}
+
 
 struct ProcessTime* tsToPTime( const struct timespec* tspec ){
     deltatime_t dt = tsToDeltaTime( tspec );
     struct timespec* ts = ts_copy( tspec );
     
-    short days = dt % (24*60*60);
-    time_t days_in_seconds = days * 24*60*60;
+    short days = dt_mod_int(dt, SECONDS_DAY);
+    time_t days_in_seconds = days * SECONDS_DAY;
     ts = ts_minus( ts, timespec_new( days_in_seconds, 0 ) );
 
     dt -= days_in_seconds;
-    short hours = dt % (60*60);
-    time_t hours_in_seconds = hours * 60*60;
+    short hours = dt_mod_int(dt, SECONDS_HOUR);
+    time_t hours_in_seconds = hours * SECONDS_HOUR;
     ts = ts_minus( ts, timespec_new( hours_in_seconds, 0 ) );
 
     dt -= hours_in_seconds;
-    short minutes = dt % 60;
-    time_t minutes_in_seconds = minutes * 60;
+    short minutes = dt_mod_int(dt, SECONDS_MINUTE);
+    time_t minutes_in_seconds = minutes * SECONDS_MINUTE;
     ts = ts_minus( ts, timespec_new( minutes_in_seconds, 0 ) );
     
     dt -= minutes_in_seconds;
-    hours += minutes % 60;
-    minutes -= ( minutes % 60 ) * 60;
-    days += hours % 24;
-    hours -= (hours % 24) * 24;
+    hours += minutes % SECONDS_MINUTE;
+    minutes -= ( minutes % SECONDS_MINUTE ) * SECONDS_MINUTE;
+    days += hours % HOURS_DAY;
+    hours -= (hours % HOURS_DAY) * HOURS_DAY;
     time_t seconds = dt;
 
     return processtime_new( hours, minutes, days, seconds, 0 );
@@ -130,14 +144,14 @@ tick_t tsToTicks( const struct timespec* tspec ){
     const unsigned int sizeof_nsec = sizeofnum( tspec->tv_nsec );
 
     deltatime_t dt = 0.0 + (double) tspec->tv_sec;
-    dt += 0.0 + (double) tspec->tv_nsec * sizeofnum_factor( tspec->tv_nsec );
+    dt += 0.0 + (double) tspec->tv_nsec * sizeofnum_factor( tspec->tv_nsec, false );
 
     return seconds_to_ticks( dt );
 }
 
 
 struct timespec* PTimeToTspec( const struct ProcessTime* pt ) {
-    time_t seconds = (pt->day * 24*60*60) + (pt->hour * 60*60) + (pt->minute * 60);
+    time_t seconds = (pt->day * SECONDS_DAY) + (pt->hour * SECONDS_HOUR) + (pt->minute * SECONDS_MINUTE);
     return timespec_new( seconds, 0 );
 }
 
@@ -247,16 +261,16 @@ const unsigned int sizeofnum( const long num ) {
 
 
 const unsigned int sizeofnumd_behind_comma( const double num ) {
-    const long num_before_comma = num % 1.0;
+    const long num_before_comma = fmod( (double) num, 1.0 );
     const double num_behind_comma_only = num - num_before_comma;
-    const long num_behind_comma = num_behind_comma_only % 0.1;
+    const long num_behind_comma = fmod( num_behind_comma_only, 0.1 );
 
     return sizeofnum( num_behind_comma );
 }
 
 
 const unsigned int sizeofnumd_before_comma( const double num ) {
-    const long num_before_comma = num % 1.0;
+    const long num_before_comma = fmod( num, 1.0 );
 
     return sizeofnum( num_before_comma );
 }

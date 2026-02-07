@@ -59,7 +59,7 @@ extern "C" {
  *	|  SIGEMT            |  coredump	|
  *	+--------------------+------------------+
  */
-typedef enum P_SIGNALS
+typedef enum
 {
      SIGHUP            //   |   terminate	|
    , SIGINT            //   |    terminate	|
@@ -102,6 +102,7 @@ typedef enum P_SIGNALS
    , SIGASYNC
    , SIGPARENT
    , SIGRESUMED
+   , SIGSUSPEND
 }
 PSignals;
 
@@ -155,7 +156,7 @@ typedef struct SignalQueue {
     struct SignalQueue* first;
 } signal_queue_t;
 
-struct SignalQueue* signalqueue_new( struct Signal* first_elem, struct SignalQueue* first_elem );
+struct SignalQueue* signalqueue_new( struct Signal* signal_elem, struct SignalQueue* first_elem );
 struct SignalQueue* signalqueue_add( struct Signal* new_elem, struct SignalQueue* sigq_first );
 
 

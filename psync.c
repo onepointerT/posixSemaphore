@@ -3,6 +3,9 @@
 
 #include "psync.h"
 
+#include "ptime.h"
+#include "threading.h"
+
 #include <stdlib.h>
 
 struct SyncTime* synctime_new( const struct timespec* current_process_time
@@ -10,7 +13,7 @@ struct SyncTime* synctime_new( const struct timespec* current_process_time
                         , callback_sync_finished_f callback_sync_finished ) {
     struct SyncTime* st = (struct SyncTime*) malloc(sizeof(struct SyncTime));
 
-    st->time_current = current_process_time;
+    st->time_current =  timespec_new( current_process_time->tv_sec, current_process_time->tv_nsec );
     st->time_syncpoint = NULL;
     st->time_suspended = NULL;
 
@@ -28,20 +31,20 @@ struct SyncTime* synctime_new( const struct timespec* current_process_time
 
 struct Signal* callback_reentrance(struct semaphore* dsem, const struct SyncTime* st) {
     dsem->lock( dsem, st->thread->threadid );
-    return signal_new( SIGRESUME, false, st->thread->threadid
-                NULL, NULL, 0, "Callback reentrance, SIGRESUME." );
+    return signal_new( sigresume, false, st->thread->threadid
+                , NULL, NULL, 0, "Callback reentrance, SIGRESUME." );
 }
 
 struct PThread* callback_sync_suspense(const struct timespec* wait_time
                                     , const enum PSignals psig_now, struct PThread* sync_pthr ) {
-    pthread_condattr_t condattr = NULL;
+    pthread_condattr_t* condattr = NULL;
     pthread_condattr_init( condattr );
     pthread_condattr_setpshared( condattr, sync_pthr->pshared );
 
-    pthread_cond_t cond = NULL;
+    pthread_cond_t* cond = NULL;
     pthread_cond_init( cond, condattr );
 
-    pthread_mutex_t mtx = NULL;
+    pthread_mutex_t* mtx = NULL;
     pthread_mutex_init( mtx, sync_pthr->attr_mutex );
 
     return ( 0 == pthread_cond_timedwait( cond, mtx, wait_time ) )
@@ -51,31 +54,43 @@ struct PThread* callback_sync_suspense(const struct timespec* wait_time
 
 struct SyncTimeHandler* synctimehandler_new( callback_reentrance_f callback_reentrance
                                 , callback_sync_suspense_f callback_sync_suspense ) {
+    struct SyncTimeHandler* sth = (struct SyncTimeHandler*) malloc(sizeof(struct SyncTimeHandler));
 
+    sth->cb_reentrance = callback_reentrance;
+    sth->cb_sync_suspense = callback_sync_suspense;
+    sth->st = NULL;
+
+    return sth;
 }
 
 
 
 bool syncpgoon_waitsuspensetime( struct SyncTimeHandler* sth, const struct timespec* goon_suspense_time ) {
-
+    if ( sth == NULL || sth->st == NULL ) return false;
+    
+    if ( sth->st->time_suspended == NULL )
+        sth->st->time_suspended = timespec_new( goon_suspense_time->tv_sec, goon_suspense_time->tv_nsec );
+    else
+        sth->st->time_suspended = ts_plus( sth->st->time_suspended, goon_suspense_time );
+    
+    struct PThread* thread = sth->cb_sync_suspense( sth->st->time_suspended, SIGSUSPEND, sth->st->thread );
+    return thread != NULL;
 }
 
 
 bool syncpgoon_resumetime( struct SyncTimeHandler* sth, const struct timespec* goon_suspense_time ) {
+    if ( sth == NULL || sth->st == NULL ) return false;
 
+    sth->st->signal = sth->cb_reentrance( sth->st->sync_wait_suspense->sem, sth->st );
+    if ( sth->st->signal != NULL ) // TODO: Signal handling
+        sth->st->signal_finished = sth->st->signal->type;
+    
+    return true;
 }
 
 
 
 bool syncptime( struct SyncTimeHandler* sth, const enum PSync psync ) {
-
-}
-
-bool syncpgoon_waitsuspensetime( struct SyncTimeHandler* sth, const struct timespec* goon_suspense_time ) {
-
-}
-
-bool syncpgoon_resumetime( struct SyncTimeHandler* sth, const struct timespec* goon_suspense_time ) {
 
 }
 
@@ -140,8 +155,16 @@ struct SyncProcessHandler* syncprocesshandler_new( callback_sync_f callback_sync
 
 bool syncprocesshandler_set_processes( struct SyncProcessHandler* sph, struct PThread* p1, struct PThread* p2 ) {
     if ( sph == NULL || sph->sp == NULL ) return false;
-    sph->sp->p1 = p1;
-    sph->sp->p2 = p2;
+    time_update_since_start();
+    struct timespec* ts_sysstart = PTimeToTspec( time_system_start );
+
+    struct ProcessTime* pt_now = systime_now();
+
+    sph->sp->p1 = synctime_new( PTimeToTspec( pt_minus( pt_now, pt_minus( p1->time_pstarted, time_system_start) ) )
+                        , SIGSYNC, p1, NULL );
+    sph->sp->p2 = synctime_new( PTimeToTspec( pt_minus( pt_now, pt_minus( p2->time_pstarted, time_system_start ) ) )
+                        , SIGSYNC, p2, NULL );
+    
     return true;
 }
 
@@ -151,20 +174,18 @@ bool syncprocesshandler_sync_processes( struct PThread* p1, struct PThread* p2
     struct SyncProcessHandler* sph = syncprocesshandler_new( callback_sync, callback_async );
     syncprocesshandler_set_processes( sph, p1, p2 );
 
-    sph->sp = syncprocess_new( p1, p2, sph, callback_sync_finished );
+    struct SyncTimeHandler* sth = synctimehandler_new( callback_reentrance, callback_sync ); // TODO
+
+    sph->sp = syncprocess_new( p1, p2, sth, psync, callback_sync_finished );
     sph->sp_queue = sph->sp;
 
     struct PThread* pt1 = p1;
     struct PThread* pt2 = p2;
 
-    sph->sp->p1->time_current = 
+    // sph->sp->p1->time_current = 
 }
 
 bool syncprocesshandler_sync_children( struct PThread* parent_process ) {
-
-}
-
-bool syncprocesshandler_sync_with_parents( struct PThread* process ) {
 
 }
 

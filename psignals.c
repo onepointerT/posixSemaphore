@@ -4,6 +4,7 @@
 #include "psignals.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 
 struct PID_Array* pid_array_new( const unsigned long process_id, struct PID_Array* first ) {
@@ -43,13 +44,13 @@ struct Signal* signal_new( const PSignals psig, const bool locked
     sig->locked = locked;
     sig->processed = false;
 
-    sig->msg = msg;
+    strcpy( sig->msg, msg );
     sig->results = (char**) malloc(sizeof(char*)*results_size);
     for ( unsigned int r = 0; r < results_size; r++ ) {
         sig->results[r] = NULL;
     }
 
-    sig->dsem = semaphore_type_new( NULL, PTHREAD_PROCESS_SHARED );
+    sig->dsem = semaphore_type_new( NULL, THREAD_PROCESS_SHARED );
     sig->param = param_pack;
 
     sig->receiver_thread_id = receiver_thread_id;
@@ -69,10 +70,10 @@ bool signal_add_receiver( struct Signal* sig, const unsigned long pid_recv ) {
     return true;
 }
 
-struct SignalQueue* signalqueue_new( struct Signal* first_elem, struct SignalQueue* first_elem ) {
+struct SignalQueue* signalqueue_new( struct Signal* signal_elem, struct SignalQueue* first_elem ) {
     struct SignalQueue* sq = (struct SignalQueue*) malloc(sizeof(struct SignalQueue));
 
-    sq->sig = first_elem;
+    sq->sig = signal_elem;
     if ( first_elem == NULL ) sq->first = sq;
     else sq->first = first_elem;
     sq->next = NULL;

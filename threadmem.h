@@ -32,7 +32,7 @@ typedef struct Memory {
 } memory_t;
 
 
-struct Memory* memory_new( const enum PTHREAD_PROCESS_AVAILABILITY )
+struct Memory* memory_new( const enum PTHREAD_PROCESS_AVAILABILITY );
 
 #ifdef __cplusplus
 }

@@ -1,7 +1,7 @@
 
 cmake_minimum_required( VERSION 3.22 )
 
-project( posixSemaphore C )
+project( posixSemaphore C CXX )
 
 set( LIBPSEMAPHORE_STABLE_VERSION 0 )
 set( LIBPSEMAPHORE_RELEASE 0 )
@@ -16,6 +16,7 @@ set ( PROJECT_DESCRIPTION "A advanced POSIX-semaphore for C. In advance to norma
 
 
 set ( CMAKE_C_STANDARD 23 )
+set ( CMAKE_CXX_STANDARD 20 )
 
 
 if( PSEMAPHORE_DESTDIR )
@@ -35,4 +36,13 @@ if( PSEMAPHORE_SHARED )
 else()
 	add_library( psem STATIC ${LIBPSEMAPHORE_SOURCE} )
 endif()
-target_link_libraries( psem pthread )
+target_link_libraries( psem pthread m )
+
+
+file ( GLOB LIBPSEMAPHORE_SOURCE_CPP ${PROJECT_SOURCE_DIR}/*.cpp )
+if( PSEMAPHORE_SHARED )
+	add_library( psemcpp ${LIBPSEMAPHORE_SOURCE_CPP} )
+else()
+	add_library( psemcpp STATIC ${LIBPSEMAPHORE_SOURCE_CPP} )
+endif()
+target_link_libraries( psemcpp psem )

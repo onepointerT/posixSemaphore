@@ -34,6 +34,7 @@ typedef struct SyncTime {
     enum PSignals signal_in;
     enum PSignals signal_now;
     enum PSignals signal_finished;
+    struct Signal* signal;
 
     struct PThread* thread;
     struct PThread* sync_wait_suspense;
@@ -57,10 +58,10 @@ typedef struct SyncTimeHandler {
 
     callback_reentrance_f cb_reentrance;
     callback_sync_suspense_f cb_sync_suspense;
-} sync_time_t;
+} sync_time_handler_t;
 
 
-typedef enum P_ASYNC
+typedef enum
 {
     PROCESS_ASYNCRONOUS = 0,
     PROCESS_SYNCRONOUS = 1
